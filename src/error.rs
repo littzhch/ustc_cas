@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use reqwest::Error as RqError;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ErrorKind {
@@ -71,5 +72,11 @@ impl Display for CasError {
 impl Error for CasError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(self.get_ref())
+    }
+}
+
+impl From<RqError> for CasError {
+    fn from(value: RqError) -> Self {
+        Self::new(ErrorKind::NetworkError, value)
     }
 }
