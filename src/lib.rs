@@ -1,4 +1,5 @@
 mod error;
+mod validate_code;
 
 
 pub fn add(left: usize, right: usize) -> usize {
