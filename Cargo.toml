@@ -4,22 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 description = "a simple library for logging into USTC CAS System"
-homepage = ""
-documentation = ""
-repository = ""
+repository = "https://github.com/littzhch/ustc_cas/"
 readme = "README.md"
-license = "GPL"
+license = "GPL-3.0-only"
 
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bytes = "1.3.0"
 image = { version = "0.24.5", default-features = false, features = ["jpeg"] }
 once_cell = "1.17.0"
 regex = { version = "1.7.1", default-features = false, features = ["unicode", "std"] }
-reqwest = { version = "0.11.14", default-features = false, features = ["cookies", "native-tls"] }
+reqwest = { version = "0.11.14", default-features = false, features = ["cookies"] }
 
 [dev-dependencies]
 tokio = { version = "1.24.2", features = ["full"] }
