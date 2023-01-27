@@ -119,7 +119,7 @@ where
             .to_str().unwrap()
     )
         .next()
-        .ok_or(CasError::new(ErrorKind::UserInfoIncorrect))?
+        .ok_or(CasError::new(ErrorKind::ServiceUrlIncorrect))?
         [1];
     Ok(ticket.into())
 }
