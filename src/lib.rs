@@ -41,17 +41,15 @@
 //! enabling this feature.
 //!
 
-
 mod error;
 mod validate_code;
 
-use std::collections::HashMap;
 pub use error::*;
+use std::collections::HashMap;
 
-use once_cell::sync::OnceCell;
+use once_cell::sync::Lazy;
 use regex::Regex;
-use reqwest::redirect::Policy;
-use reqwest::Client;
+use reqwest::{redirect::Policy, Client};
 
 ///
 /// log into USTC CAS System and get ticket value.
@@ -76,11 +74,8 @@ where
     const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
             (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77";
 
-    static TICKET_RE: OnceCell<Regex> = OnceCell::new();
-    static CLIENT: OnceCell<Client> = OnceCell::new();
-
-    let ticket_re = TICKET_RE.get_or_init(|| Regex::new(r#"ticket=(\S*)"#).unwrap());
-    let client = CLIENT.get_or_init(|| {
+    static TICKET_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"ticket=(\S*)"#).unwrap());
+    static CLIENT: Lazy<Client> = Lazy::new(|| {
         Client::builder()
             .user_agent(USER_AGENT)
             .cookie_store(true)
@@ -93,8 +88,8 @@ where
     let password = password.as_ref();
     let service_url = service_url.as_ref();
 
-    let rsps = client
-        .get(format!("{}?service={}", URL, service_url))
+    let rsps = CLIENT
+        .get(format!("{URL}?service={service_url}"))
         .send()
         .await?
         .error_for_status()
@@ -105,34 +100,44 @@ where
     form.insert("username".into(), username.into());
     form.insert("password".into(), password.into());
     if form["showCode"] == "1" {
-        let rsps = client.get(IMAGE_URL).send().await?.error_for_status().unwrap();
+        let rsps = CLIENT
+            .get(IMAGE_URL)
+            .send()
+            .await?
+            .error_for_status()
+            .unwrap();
         let code = validate_code::get_validatecode(rsps.bytes().await.unwrap());
         form.insert("LT".into(), code);
     }
     form.insert("button".into(), "".into());
 
-    let rsps = client.post(URL).form(&form).send().await?.error_for_status().unwrap();
-    let ticket = &ticket_re.captures_iter(
-        rsps.headers()
-            .get("location")
-            .ok_or(CasError::new(ErrorKind::UserInfoIncorrect))?
-            .to_str().unwrap()
-    )
+    let rsps = CLIENT
+        .post(URL)
+        .form(&form)
+        .send()
+        .await?
+        .error_for_status()
+        .unwrap();
+    let ticket = &TICKET_RE
+        .captures_iter(
+            rsps.headers()
+                .get("location")
+                .ok_or(CasError::new(ErrorKind::UserInfoIncorrect))?
+                .to_str()
+                .unwrap(),
+        )
         .next()
-        .ok_or(CasError::new(ErrorKind::ServiceUrlIncorrect))?
-        [1];
+        .ok_or(CasError::new(ErrorKind::ServiceUrlIncorrect))?[1];
     Ok(ticket.into())
 }
 
-
 fn get_form(data: String) -> Result<HashMap<String, String>, CasError> {
-    static RE: OnceCell<Regex> = OnceCell::new();
-    let re = RE.get_or_init(
-        || {Regex::new(r#"<input type="hidden"[\s\S]*?name="(\S*?)" value="(\S*?)""#).unwrap()}
-    );
+    static RE: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r#"<input type="hidden"[\s\S]*?name="(\S*?)" value="(\S*?)""#).unwrap()
+    });
 
     let mut map = HashMap::new();
-    for cap in re.captures_iter(&data) {
+    for cap in RE.captures_iter(&data) {
         map.insert(cap[1].to_string(), cap[2].to_string());
     }
     if map.is_empty() {
