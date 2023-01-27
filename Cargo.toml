@@ -1,6 +1,6 @@
 [package]
 name = "ustc_cas"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 description = "a simple library for logging into USTC CAS System"
