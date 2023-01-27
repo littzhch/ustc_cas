@@ -6,7 +6,7 @@ edition = "2021"
 description = "a simple library for logging into USTC CAS System"
 repository = "https://github.com/littzhch/ustc_cas/"
 readme = "README.md"
-license = "GPL-3.0-only"
+license-file = "LICENSE.txt"
 
 [lib]
 crate-type = ["lib"]
