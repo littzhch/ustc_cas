@@ -36,12 +36,18 @@
 //! ```
 //!
 //! # features
+//! - `validate-code`: Validate code recognition using `image` crate. `get_ticket` function will
+//! panic if this feature is disabled but validate code is requested. Enabled by default.
 //! - `native-tls`: Use system tls library. Enabled by default.
 //! - `rustls-tls`: Use rustls instead of system tls library. Disable `default` feature before
 //! enabling this feature.
 //!
+//!
+
+extern crate core;
 
 mod error;
+#[cfg(feature = "validate-code")]
 mod validate_code;
 
 pub use error::*;
@@ -56,7 +62,10 @@ use reqwest::{redirect::Policy, Client};
 ///
 /// # Panic
 ///
-/// The function may panic if the CAS interface changed. Panic is considered
+/// The function will panic if `validate-code` feature is disabled but validate code recognition
+/// is needed.
+///
+/// The function may panic if the CAS interface changed. This kind of panic is considered
 /// a bug and needs to be fixed.
 ///
 pub async fn get_ticket<U, P, S>(
@@ -99,6 +108,8 @@ where
     let mut form = get_form(text)?;
     form.insert("username".into(), username.into());
     form.insert("password".into(), password.into());
+
+    #[cfg(feature = "validate-code")]
     if form["showCode"] == "1" {
         let rsps = CLIENT
             .get(IMAGE_URL)
@@ -109,6 +120,12 @@ where
         let code = validate_code::get_validatecode(rsps.bytes().await.unwrap());
         form.insert("LT".into(), code);
     }
+
+    #[cfg(not(feature = "validate-code"))]
+    if form["showCode"] == "1" {
+        panic!("validate code needed but validate-code feature not enabled");
+    }
+
     form.insert("button".into(), "".into());
 
     let rsps = CLIENT
