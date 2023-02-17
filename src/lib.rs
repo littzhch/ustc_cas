@@ -1,70 +1,69 @@
 //! a simple library for logging into USTC CAS System.
 //!
 //! # Usage
-//! All you should do is call `get_ticket`. The function param `service_url` can
+//! All you should do is call [`get_ticket`]. The function param `service_url` can
 //! be found from browser's address bar when logging into CAS by hand. The returned ticket value
 //! can be used for further authentication specific to websites.
 //!
+//! [`ustc_cas::get_ticket`](get_ticket) is an async function and requires a async runtime
+//! to execute. While [`ustc_cas::blocking::get_ticket`](blocking::get_ticket),
+//! enabled by `blocking` feature, can not be used in an aysnc runtime.
+//! It with block the current thread before returning.
 //!
-//! # example
+//! # Example
 //! ```rust
-//! use std::error::Error;
 //! use tokio::runtime::Builder;
 //!
-//! fn main() -> Result<(), Box<dyn Error>> {
-//!     let runtime = Builder::new_current_thread()
-//!         .enable_io()
-//!         .enable_time()
-//!         .build()?;
+//!  let runtime = Builder::new_current_thread()
+//!     .enable_io()
+//!     .enable_time()
+//!     .build()
+//!     .unwrap();
 //!
 //!     let result = runtime.block_on(ustc_cas::get_ticket(
-//!         "PB00000000",
-//!         "12345678",
-//!         "https://jw.ustc.edu.cn/ucas-sso/login",
-//!     ));
+//!     "PB00000000",
+//!     "12345678",
+//!     "https://jw.ustc.edu.cn/ucas-sso/login",
+//!  ));
 //!
-//!     match result {
-//!         Ok(s) => {
-//!             println!("ticket: {s}");
-//!         },
-//!         Err(e) => {
-//!             println!("Error: {e}");
-//!         }
+//!  match result {
+//!     Ok(s) => {
+//!         println!("ticket: {s}");
+//!     },
+//!     Err(e) => {
+//!         println!("Error: {e}");
 //!     }
-//!
-//!     Ok(())
-//! }
+//!  }
 //! ```
 //!
-//! # features
-//! - `validate-code`: Validate code recognition using `image` crate. `get_ticket` function will
-//! panic if this feature is disabled but validate code is requested. Enabled by default.
+//! # Features
+//! - `validate-code`: Validate code recognition using `image` and `bytes` crate.
+//! `get_ticket` function will panic if this feature is disabled but validate code is requested.
+//! Enabled by default.
 //! - `blocking`: provide blocking version of `get_ticket` function.
 //! - `native-tls`: Use system tls library. Enabled by default.
 //! - `rustls-tls`: Use rustls for tls functionality.
 //!
 //!
 
-
+#[cfg(feature = "blocking")]
+pub mod blocking;
 mod error;
 #[cfg(feature = "validate-code")]
 mod validate_code;
-#[cfg(feature = "blocking")]
-pub mod blocking;
-
 
 pub use error::*;
 
-use std::collections::HashMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use reqwest::{redirect::Policy, Client};
 use reqwest::header::HeaderMap;
+use reqwest::{redirect::Policy, Client};
+use std::collections::HashMap;
 
 ///
 /// log into USTC CAS System and get ticket value.
 ///
-/// # Panic
+/// # Panics
 ///
 /// The function will panic if `validate-code` feature is disabled but validate code recognition
 /// is needed.
@@ -136,7 +135,6 @@ where
 
     match_ticket(rsps.headers())
 }
-
 
 const URL: &str = "https://passport.ustc.edu.cn/login";
 const IMAGE_URL: &str = "https://passport.ustc.edu.cn/validatecode.jsp?type=login";

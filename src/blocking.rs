@@ -1,33 +1,38 @@
-//! blocking version of `get_ticket`
+//! provide blocking version of [`get_ticket`](super::get_ticket)
+//!
+//! Using this module requires enabling `blocking` feature.
+
 use reqwest::blocking;
 use super::*;
 
 
-/// blocking version of `get_ticket`
+/// log into USTC CAS System and get ticket value. blocking version of
+/// [`get_ticket`](super::get_ticket).
 ///
-/// # example
+/// # Panics
+///
+/// The function will panic if `validate-code` feature is disabled but validate code recognition
+/// is needed.
+///
+/// The function may panic if the CAS interface changed. This kind of panic is considered
+/// a bug and needs to be fixed.
+///
+/// # Example
 /// ```rust
-/// use std::error::Error;
+///  let result = ustc_cas::blocking::get_ticket(
+///     "PB00000000",
+///     "12345678",
+///     "https://jw.ustc.edu.cn/ucas-sso/login",
+///  );
 ///
-/// fn main() -> Result<(), Box<dyn Error>> {
-///
-///     let result = ustc_cas::blocking::get_ticket(
-///         "PB00000000",
-///         "12345678",
-///         "https://jw.ustc.edu.cn/ucas-sso/login",
-///     );
-///
-///     match result {
-///         Ok(s) => {
-///             println!("ticket: {s}");
-///         },
-///         Err(e) => {
-///             println!("Error: {e}");
-///         }
+///  match result {
+///     Ok(s) => {
+///         println!("ticket: {s}");
+///     },
+///     Err(e) => {
+///         println!("Error: {e}");
 ///     }
-///
-///     Ok(())
-/// }
+///  }
 /// ```
 pub fn get_ticket<U, P, S>(
     username: U,
