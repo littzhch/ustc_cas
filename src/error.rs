@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 
 ///
 ///  The error kind used by `CasError`
-/// 
+///
 /// Use `match` to process different kind.
 ///
 #[derive(Copy, Clone, Debug)]
@@ -41,7 +41,7 @@ impl CasError {
     }
 
     pub(crate) fn new(kind: ErrorKind) -> Self {
-        Self {kind, inner: None}
+        Self { kind, inner: None }
     }
 
     pub fn get_ref(&self) -> Option<&(dyn Error + Send + Sync + 'static)> {
@@ -73,7 +73,7 @@ impl Display for CasError {
             }
             NetworkError => {
                 write!(f, "Network failed")
-            },
+            }
         }
     }
 }

@@ -2,9 +2,8 @@
 //!
 //! Using this module requires enabling `blocking` feature.
 
-use reqwest::blocking;
 use super::*;
-
+use reqwest::blocking;
 
 /// log into USTC CAS System and get ticket value. blocking version of
 /// [`get_ticket`](super::get_ticket).
@@ -34,15 +33,11 @@ use super::*;
 ///     }
 ///  }
 /// ```
-pub fn get_ticket<U, P, S>(
-    username: U,
-    password: P,
-    service_url: S,
-) -> Result<String, CasError>
-    where
-        U: AsRef<str>,
-        P: AsRef<str>,
-        S: AsRef<str>,
+pub fn get_ticket<U, P, S>(username: U, password: P, service_url: S) -> Result<String, CasError>
+where
+    U: AsRef<str>,
+    P: AsRef<str>,
+    S: AsRef<str>,
 {
     static CLIENT: Lazy<blocking::Client> = Lazy::new(|| {
         blocking::Client::builder()
@@ -70,11 +65,7 @@ pub fn get_ticket<U, P, S>(
 
     #[cfg(feature = "validate-code")]
     if form["showCode"] == "1" {
-        let rsps = CLIENT
-            .get(IMAGE_URL)
-            .send()?
-            .error_for_status()
-            .unwrap();
+        let rsps = CLIENT.get(IMAGE_URL).send()?.error_for_status().unwrap();
         let code = validate_code::get_validatecode(rsps.bytes().unwrap());
         form.insert("LT".into(), code);
     }
