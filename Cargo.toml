@@ -29,3 +29,5 @@ blocking = ["reqwest/blocking"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
 
+[package.metadata.docs.rs]
+all-features = true
