@@ -1,9 +1,10 @@
 //! a simple library for logging into USTC CAS System.
 //!
 //! # Usage
-//! All you should do is call `ustc_cas::get_ticket`. The function param `service_url` can
+//! All you should do is call `get_ticket`. The function param `service_url` can
 //! be found from browser's address bar when logging into CAS by hand. The returned ticket value
 //! can be used for further authentication specific to websites.
+//!
 //!
 //! # example
 //! ```rust
@@ -38,24 +39,27 @@
 //! # features
 //! - `validate-code`: Validate code recognition using `image` crate. `get_ticket` function will
 //! panic if this feature is disabled but validate code is requested. Enabled by default.
+//! - `blocking`: provide blocking version of `get_ticket` function.
 //! - `native-tls`: Use system tls library. Enabled by default.
-//! - `rustls-tls`: Use rustls instead of system tls library. Disable `default` feature before
-//! enabling this feature.
+//! - `rustls-tls`: Use rustls for tls functionality.
 //!
 //!
 
-extern crate core;
 
 mod error;
 #[cfg(feature = "validate-code")]
 mod validate_code;
+#[cfg(feature = "blocking")]
+pub mod blocking;
+
 
 pub use error::*;
-use std::collections::HashMap;
 
+use std::collections::HashMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::{redirect::Policy, Client};
+use reqwest::header::HeaderMap;
 
 ///
 /// log into USTC CAS System and get ticket value.
@@ -78,12 +82,6 @@ where
     P: AsRef<str>,
     S: AsRef<str>,
 {
-    const URL: &str = "https://passport.ustc.edu.cn/login";
-    const IMAGE_URL: &str = "https://passport.ustc.edu.cn/validatecode.jsp?type=login";
-    const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
-            (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77";
-
-    static TICKET_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"ticket=(\S*)"#).unwrap());
     static CLIENT: Lazy<Client> = Lazy::new(|| {
         Client::builder()
             .user_agent(USER_AGENT)
@@ -135,9 +133,21 @@ where
         .await?
         .error_for_status()
         .unwrap();
+
+    match_ticket(rsps.headers())
+}
+
+
+const URL: &str = "https://passport.ustc.edu.cn/login";
+const IMAGE_URL: &str = "https://passport.ustc.edu.cn/validatecode.jsp?type=login";
+const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
+            (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77";
+static TICKET_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"ticket=(\S*)"#).unwrap());
+
+fn match_ticket(headers: &HeaderMap) -> Result<String, CasError> {
     let ticket = &TICKET_RE
         .captures_iter(
-            rsps.headers()
+            headers
                 .get("location")
                 .ok_or(CasError::new(ErrorKind::UserInfoIncorrect))?
                 .to_str()

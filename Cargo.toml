@@ -25,6 +25,7 @@ tokio = { version = "1.24", features = ["full"] }
 [features]
 default = ["native-tls", "validate-code"]
 validate-code = ["image", "bytes"]
+blocking = ["reqwest/blocking"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
 
