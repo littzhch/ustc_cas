@@ -59,9 +59,11 @@ where
         .unwrap();
 
     let text = rsps.text().unwrap();
+    let cas_lt = get_cas_lt(&text)?.into();
     let mut form = get_form(text)?;
     form.insert("username".into(), username.into());
     form.insert("password".into(), password.into());
+    form.insert("CAS_LT".into(), cas_lt);
 
     #[cfg(feature = "validate-code")]
     if form["showCode"] == "1" {

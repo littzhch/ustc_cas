@@ -102,9 +102,11 @@ where
         .unwrap();
 
     let text = rsps.text().await.unwrap();
+    let cas_lt = get_cas_lt(&text)?.into();
     let mut form = get_form(text)?;
     form.insert("username".into(), username.into());
     form.insert("password".into(), password.into());
+    form.insert("CAS_LT".into(), cas_lt);
 
     #[cfg(feature = "validate-code")]
     if form["showCode"] == "1" {
@@ -170,4 +172,13 @@ fn get_form(data: String) -> Result<HashMap<String, String>, CasError> {
     } else {
         Ok(map)
     }
+}
+
+fn get_cas_lt(data: &str) -> Result<&str, CasError> {
+    static RE: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r##"\$\("#CAS_LT"\).val\("(\S*?)"\);"##).unwrap()
+    });
+    let cap = RE.captures(data).ok_or(CasError::new(ErrorKind::NetworkError))?;
+    let a = cap.get(1).ok_or(CasError::new(ErrorKind::NetworkError))?.as_str();
+    Ok(a)
 }
